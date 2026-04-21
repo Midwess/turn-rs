@@ -192,15 +192,12 @@ where
         }
 
         Ok(match self.decoder.decode(bytes)? {
-            DecodeResult::ChannelData(channel) => channel_data(
-                bytes,
-                Request {
-                    id: &self.current_id,
-                    state: &self.state,
-                    encode_buffer: &mut self.bytes,
-                    payload: &channel,
-                },
-            ),
+            DecodeResult::ChannelData(channel) => channel_data(Request {
+                id: &self.current_id,
+                state: &self.state,
+                encode_buffer: &mut self.bytes,
+                payload: &channel,
+            }),
             DecodeResult::Message(message) => {
                 let req = Request {
                     id: &self.current_id,
@@ -675,10 +672,7 @@ where
 /// the Length field in the ChannelData message is 0, then there will be
 /// no data in the UDP datagram, but the UDP datagram is still formed and
 /// sent [(Section 4.1 of [RFC6263])](https://tools.ietf.org/html/rfc6263#section-4.1).
-fn channel_data<'a, T>(
-    _bytes: &'a [u8],
-    req: Request<'_, 'a, T, ChannelData<'_>>,
-) -> Option<Response<'a>>
+fn channel_data<'a, T>(req: Request<'_, 'a, T, ChannelData<'_>>) -> Option<Response<'a>>
 where
     T: ServiceHandler,
 {
