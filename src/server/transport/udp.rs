@@ -26,9 +26,6 @@ impl Socket for UdpSocket {
 
     async fn write(&mut self, buffer: &[u8]) -> Result<()> {
         if let Err(e) = self.socket.send_to(buffer, self.addr).await {
-            // Note: An error will also be reported when the remote host is
-            // shut down, which is not processed yet, but a
-            // warning will be issued.
             if e.kind() != ErrorKind::ConnectionReset {
                 return Err(e.into());
             }
@@ -61,6 +58,7 @@ impl Server for UdpServer {
             let socket = socket.clone();
 
             let mut buffer = BytesMut::zeroed(options.mtu);
+            let demuxer_capacity = options.demuxer_capacity;
 
             tokio::spawn(async move {
                 let mut sockets = HashMap::<SocketAddr, Sender<Bytes>>::with_capacity(1024);
@@ -89,12 +87,9 @@ impl Server for UdpServer {
                             }
 
                             if let Some(stream) = sockets.get(&addr) {
-                                if stream.try_send(Bytes::copy_from_slice(&buffer[..size])).is_err()
-                                {
-                                    sockets.remove(&addr);
-                                }
+                                let _ = stream.try_send(Bytes::copy_from_slice(&buffer[..size]));
                             } else {
-                                let (tx, bytes_receiver) = channel::<Bytes>(100);
+                                let (tx, bytes_receiver) = channel::<Bytes>(demuxer_capacity);
 
                                 // Send the first packet to the new socket
                                 if tx.try_send(Bytes::copy_from_slice(&buffer[..size])).is_err() {

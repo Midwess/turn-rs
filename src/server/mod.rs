@@ -32,6 +32,7 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                 external,
                 idle_timeout,
                 mtu,
+                demuxer_capacity,
             } => {
                 servers.spawn(UdpServer::start(
                     ServerOptions {
@@ -41,6 +42,7 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                         external,
                         listen,
                         mtu,
+                        demuxer_capacity,
                     },
                     service.clone(),
                     statistics.clone(),
@@ -61,6 +63,7 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                         listen,
                         mtu: 0,
                         ssl,
+                        demuxer_capacity: 0,
                     },
                     service.clone(),
                     statistics.clone(),

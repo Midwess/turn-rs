@@ -38,6 +38,7 @@ pub struct ServerOptions {
     pub external: SocketAddr,
     pub ssl: Option<Ssl>,
     pub mtu: usize,
+    pub demuxer_capacity: usize,
 }
 
 pub trait Server: Sized + Send {

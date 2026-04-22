@@ -72,6 +72,8 @@ pub enum Interface {
         ///
         #[serde(default = "Interface::mtu")]
         mtu: usize,
+        #[serde(default = "Interface::demuxer_capacity")]
+        demuxer_capacity: usize,
     },
 }
 
@@ -82,6 +84,10 @@ impl Interface {
 
     fn idle_timeout() -> u32 {
         20
+    }
+
+    fn demuxer_capacity() -> usize {
+        100
     }
 }
 
