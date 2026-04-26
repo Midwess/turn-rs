@@ -76,6 +76,26 @@ pub enum Interface {
         demuxer_capacity: usize,
         #[serde(default)]
         v6_only: bool,
+        ///
+        /// SO_SNDBUF size requested for the UDP listener socket, in bytes.
+        ///
+        /// 0 leaves the OS default in place. The actual size is clamped by the
+        /// kernel and may be smaller than requested (raise
+        /// `net.core.wmem_max` on Linux or `kern.ipc.maxsockbuf` on macOS to
+        /// allow larger values).
+        ///
+        #[serde(default = "Interface::send_buffer_size")]
+        send_buffer_size: usize,
+        ///
+        /// SO_RCVBUF size requested for the UDP listener socket, in bytes.
+        ///
+        /// 0 leaves the OS default in place. The actual size is clamped by the
+        /// kernel and may be smaller than requested (raise
+        /// `net.core.rmem_max` on Linux or `kern.ipc.maxsockbuf` on macOS to
+        /// allow larger values).
+        ///
+        #[serde(default = "Interface::recv_buffer_size")]
+        recv_buffer_size: usize,
     },
 }
 
@@ -90,6 +110,14 @@ impl Interface {
 
     fn demuxer_capacity() -> usize {
         100
+    }
+
+    fn send_buffer_size() -> usize {
+        8 * 1024 * 1024
+    }
+
+    fn recv_buffer_size() -> usize {
+        8 * 1024 * 1024
     }
 }
 

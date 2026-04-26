@@ -34,6 +34,8 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                 mtu,
                 demuxer_capacity,
                 v6_only,
+                send_buffer_size,
+                recv_buffer_size,
             } => {
                 servers.spawn(UdpServer::start(
                     ServerOptions {
@@ -45,6 +47,8 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                         mtu,
                         demuxer_capacity,
                         v6_only,
+                        send_buffer_size,
+                        recv_buffer_size,
                     },
                     service.clone(),
                     statistics.clone(),
@@ -67,6 +71,8 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                         ssl,
                         demuxer_capacity: 0,
                         v6_only: false,
+                        send_buffer_size: 0,
+                        recv_buffer_size: 0,
                     },
                     service.clone(),
                     statistics.clone(),

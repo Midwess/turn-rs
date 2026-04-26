@@ -13,16 +13,58 @@ use tokio::{
 
 use crate::server::transport::{Server, ServerOptions, Socket};
 
-fn bind_udp(listen: SocketAddr, v6_only: bool) -> Result<TokioUdpSocket> {
+fn bind_udp(
+    listen: SocketAddr,
+    v6_only: bool,
+    send_buffer_size: usize,
+    recv_buffer_size: usize,
+) -> Result<TokioUdpSocket> {
     let domain = if listen.is_ipv6() { Domain::IPV6 } else { Domain::IPV4 };
     let socket = Socket2::new(domain, Type::DGRAM, Some(Protocol::UDP))?;
     if listen.is_ipv6() {
         socket.set_only_v6(v6_only)?;
     }
     socket.set_nonblocking(true)?;
+    apply_udp_buffer_sizes(&socket, listen, send_buffer_size, recv_buffer_size);
     socket.bind(&listen.into())?;
     let std_socket: std::net::UdpSocket = socket.into();
     Ok(TokioUdpSocket::from_std(std_socket)?)
+}
+
+fn apply_udp_buffer_sizes(
+    socket: &Socket2,
+    listen: SocketAddr,
+    send_buffer_size: usize,
+    recv_buffer_size: usize,
+) {
+    if send_buffer_size > 0 {
+        if let Err(e) = socket.set_send_buffer_size(send_buffer_size) {
+            log::warn!(
+                "udp listener {listen}: SO_SNDBUF set failed: requested={send_buffer_size} error={e}"
+            );
+        }
+        if let Ok(actual) = socket.send_buffer_size() {
+            if actual < send_buffer_size / 2 {
+                log::warn!(
+                    "udp listener {listen}: SO_SNDBUF clamped: requested={send_buffer_size} actual={actual} (raise net.core.wmem_max on Linux or kern.ipc.maxsockbuf on macOS)"
+                );
+            }
+        }
+    }
+    if recv_buffer_size > 0 {
+        if let Err(e) = socket.set_recv_buffer_size(recv_buffer_size) {
+            log::warn!(
+                "udp listener {listen}: SO_RCVBUF set failed: requested={recv_buffer_size} error={e}"
+            );
+        }
+        if let Ok(actual) = socket.recv_buffer_size() {
+            if actual < recv_buffer_size / 2 {
+                log::warn!(
+                    "udp listener {listen}: SO_RCVBUF clamped: requested={recv_buffer_size} actual={actual} (raise net.core.rmem_max on Linux or kern.ipc.maxsockbuf on macOS)"
+                );
+            }
+        }
+    }
 }
 
 pub struct UdpSocket {
@@ -63,7 +105,12 @@ impl Server for UdpServer {
     type Socket = UdpSocket;
 
     async fn bind(options: &ServerOptions) -> Result<Self> {
-        let socket = Arc::new(bind_udp(options.listen, options.v6_only)?);
+        let socket = Arc::new(bind_udp(
+            options.listen,
+            options.v6_only,
+            options.send_buffer_size,
+            options.recv_buffer_size,
+        )?);
         let (socket_sender, socket_receiver) = unbounded_channel::<(UdpSocket, SocketAddr)>();
         let (close_signal_sender, mut close_signal_receiver) = unbounded_channel::<SocketAddr>();
 

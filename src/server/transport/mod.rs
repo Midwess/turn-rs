@@ -40,6 +40,8 @@ pub struct ServerOptions {
     pub mtu: usize,
     pub demuxer_capacity: usize,
     pub v6_only: bool,
+    pub send_buffer_size: usize,
+    pub recv_buffer_size: usize,
 }
 
 pub trait Server: Sized + Send {
