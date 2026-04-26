@@ -3,6 +3,7 @@ use std::{io::ErrorKind, net::SocketAddr, sync::Arc};
 use ahash::{HashMap, HashMapExt};
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
+use socket2::{Domain, Protocol, Socket as Socket2, Type};
 use tokio::{
     net::UdpSocket as TokioUdpSocket,
     sync::mpsc::{
@@ -11,6 +12,18 @@ use tokio::{
 };
 
 use crate::server::transport::{Server, ServerOptions, Socket};
+
+fn bind_udp(listen: SocketAddr, v6_only: bool) -> Result<TokioUdpSocket> {
+    let domain = if listen.is_ipv6() { Domain::IPV6 } else { Domain::IPV4 };
+    let socket = Socket2::new(domain, Type::DGRAM, Some(Protocol::UDP))?;
+    if listen.is_ipv6() {
+        socket.set_only_v6(v6_only)?;
+    }
+    socket.set_nonblocking(true)?;
+    socket.bind(&listen.into())?;
+    let std_socket: std::net::UdpSocket = socket.into();
+    Ok(TokioUdpSocket::from_std(std_socket)?)
+}
 
 pub struct UdpSocket {
     close_signal_sender: UnboundedSender<SocketAddr>,
@@ -50,7 +63,7 @@ impl Server for UdpServer {
     type Socket = UdpSocket;
 
     async fn bind(options: &ServerOptions) -> Result<Self> {
-        let socket = Arc::new(TokioUdpSocket::bind(options.listen).await?);
+        let socket = Arc::new(bind_udp(options.listen, options.v6_only)?);
         let (socket_sender, socket_receiver) = unbounded_channel::<(UdpSocket, SocketAddr)>();
         let (close_signal_sender, mut close_signal_receiver) = unbounded_channel::<SocketAddr>();
 

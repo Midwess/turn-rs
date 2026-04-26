@@ -39,6 +39,7 @@ pub struct ServerOptions {
     pub ssl: Option<Ssl>,
     pub mtu: usize,
     pub demuxer_capacity: usize,
+    pub v6_only: bool,
 }
 
 pub trait Server: Sized + Send {

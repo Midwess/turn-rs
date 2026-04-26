@@ -38,6 +38,7 @@ aws-lc-rs = { version = "1.16", features = ["prebuilt-nasm"] }
 md-5 = "0.10"
 crc32fast = "1.5"
 rand = "0.9"
+socket2 = "0.5"
 
 [dev-dependencies]
 criterion = { version = "0.7", features = ["async_tokio"] }

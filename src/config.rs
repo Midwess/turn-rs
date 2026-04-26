@@ -74,6 +74,8 @@ pub enum Interface {
         mtu: usize,
         #[serde(default = "Interface::demuxer_capacity")]
         demuxer_capacity: usize,
+        #[serde(default)]
+        v6_only: bool,
     },
 }
 
