@@ -36,6 +36,7 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                 v6_only,
                 send_buffer_size,
                 recv_buffer_size,
+                listener_count,
             } => {
                 servers.spawn(UdpServer::start(
                     ServerOptions {
@@ -49,6 +50,7 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                         v6_only,
                         send_buffer_size,
                         recv_buffer_size,
+                        listener_count,
                     },
                     service.clone(),
                     statistics.clone(),
@@ -73,6 +75,7 @@ pub async fn start_server(config: Config, service: Service, statistics: Statisti
                         v6_only: false,
                         send_buffer_size: 0,
                         recv_buffer_size: 0,
+                        listener_count: 1,
                     },
                     service.clone(),
                     statistics.clone(),

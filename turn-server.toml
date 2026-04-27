@@ -54,6 +54,29 @@ idle-timeout = 20
 mtu = 1500
 #
 #
+# UDP socket buffer sizing.
+#
+# send-buffer-size caps the kernel's per-socket outbound queue. The default
+# (64 KB) intentionally keeps this small so that when a peer's egress wire
+# is bandwidth-limited the kernel drops packets quickly instead of queueing
+# them for seconds -- the sender's congestion control then sees real loss
+# and reacts correctly. Raise only if you need to absorb larger transient
+# bursts and accept higher delivery jitter.
+#
+# recv-buffer-size sizes the inbound side; bigger is generally fine since
+# the user-space demuxer drops via try_send when full.
+#
+# send-buffer-size = 65536
+# recv-buffer-size = 8388608
+#
+# Number of UDP listener sockets bound to this address via SO_REUSEPORT.
+# 0 = auto-pick (min(cores, 8)). 1 = legacy single-thread recv. >1 = N
+# parallel recv loops on Unix (Linux/BSD/macOS). On Windows, value is
+# coerced to 1.
+#
+# listener-count = 0
+#
+#
 # ssl configuration
 #
 # [server.interfaces.ssl]

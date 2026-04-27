@@ -96,6 +96,21 @@ pub enum Interface {
         ///
         #[serde(default = "Interface::recv_buffer_size")]
         recv_buffer_size: usize,
+        ///
+        /// Number of UDP listener sockets to bind to the same port via
+        /// SO_REUSEPORT. The kernel hashes incoming flows across them so
+        /// multiple recv loops can pull packets in parallel, scaling beyond
+        /// a single core for high-throughput relay traffic.
+        ///
+        /// 0 = auto-pick (min(available_parallelism, 8)).
+        /// 1 = single listener (legacy single-thread recv loop).
+        /// N = bind N sockets.
+        ///
+        /// Only effective on Unix (Linux/BSD/macOS) -- on Windows the count
+        /// is coerced to 1.
+        ///
+        #[serde(default = "Interface::listener_count")]
+        listener_count: usize,
     },
 }
 
@@ -112,12 +127,29 @@ impl Interface {
         100
     }
 
+    /// Default 64 KB. The kernel UDP send buffer is the listener's per-socket
+    /// outbound queue: when the wire to a peer is bandwidth-limited, packets
+    /// queue here until they drain. A large default (the 8 MB it used to be)
+    /// produces multi-second delivery jitter on relay paths under load --
+    /// SCTP / RACK on the sender side then mistakes the queue-induced delay
+    /// for packet loss and over-fires retransmits. 64 KB caps queue depth at
+    /// ~40 packets (10 ms at 50 Mbps egress), giving senders fast packet-drop
+    /// signals instead of unbounded queueing. Operators who explicitly want
+    /// more headroom can raise this in the config.
     fn send_buffer_size() -> usize {
-        8 * 1024 * 1024
+        64 * 1024
     }
 
     fn recv_buffer_size() -> usize {
         8 * 1024 * 1024
+    }
+
+    fn listener_count() -> usize {
+        // 0 = auto-pick (capped at 8); 1 = single listener (legacy behavior);
+        // N = bind N sockets to the same port via SO_REUSEPORT for parallel
+        // recv across cores. Only effective on Unix (Linux/BSD/macOS); on
+        // Windows the count is silently coerced to 1.
+        0
     }
 }
 

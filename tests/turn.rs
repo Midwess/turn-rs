@@ -33,6 +33,11 @@ pub async fn spawn_turn_server(bind: SocketAddr, auth: Auth, api: Api) -> Result
                     listen: bind,
                     idle_timeout: 30,
                     mtu: 1500,
+                    demuxer_capacity: 100,
+                    v6_only: false,
+                    send_buffer_size: 64 * 1024,
+                    recv_buffer_size: 8 * 1024 * 1024,
+                    listener_count: 1,
                 }],
                 ..Default::default()
             },

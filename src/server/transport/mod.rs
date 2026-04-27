@@ -42,6 +42,7 @@ pub struct ServerOptions {
     pub v6_only: bool,
     pub send_buffer_size: usize,
     pub recv_buffer_size: usize,
+    pub listener_count: usize,
 }
 
 pub trait Server: Sized + Send {
